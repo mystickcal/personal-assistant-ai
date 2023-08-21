@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>AiMe</title>
+    <link href="static/styles.css" rel="stylesheet"/>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <img alt="Logo" class="logo" src="static/Logo.png"/>
+
+    <div class="chat-box" id="chat-box">
+        <p><span class="aime-name">AiMe:</span> <span class="message-text">Hi! What's your name?</span></p>
+    </div>
+    <div class="user-input-box">
+        <label for="file" class="file-upload-btn">
+            <span class="plus-icon">+</span>
+            <input type="file" id="file" name="file" hidden>
+        </label>
+        <input type="text" id="user-input" placeholder="Type your name..." maxlength="16">
+        <input id="user-name" type="hidden"/>
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
+<script>
+    var userName = localStorage.getItem("userName") || "User";
+    var isFirstMessage = userName === "User";
+
+    if (!isFirstMessage) {
+        $("#user-input").removeAttr("maxlength");
+        $("#user-input").attr("placeholder", "Type your message...");
+        $("#chat-box").html("<p><span class='aime-name'>AiMe:</span> <span class='message-text'>Hi, " + userName + "! How can I help you?</span></p>"); // Update the greeting
+    }
+
+    function sendMessage() {
+        var userMessage = $("#user-input").val();
+        $("#user-input").val("");
+
+        if (isFirstMessage) {
+            if (userMessage.length > 16) {
+                alert("Please enter your name (up to 16 characters).");
+                return;
+            }
+            userName = userMessage;
+            localStorage.setItem("userName", userName);
+            $("#user-input").removeAttr("maxlength");
+            $("#user-input").attr("placeholder", "Type your message...");
+        }
+
+        isFirstMessage = false; // Update the flag after the first message
+
+        $.ajax({
+            url: "/send_message",
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({ "message": userMessage, "user_name": userName }),
+            success: function (result) {
+                $("#chat-box").append("<p><span class='user-name'>" + userName + ":</span> <span class='message-text'>" + userMessage + "</span></p>");
+                $("#chat-box").append("<p><span class='aime-name'>AiMe:</span> <span class='message-text'>" + result.bot_message + "</span></p>");
+            },
+            error: function (error) {
+                console.log(error);
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
+<script>
+    $(document).ready(function() {
+        $("#user-input").keyup(function(event) {
+            if (event.keyCode === 13) {
+                sendMessage();
+            }
+        });
+    });
+</script>
